@@ -16,13 +16,11 @@ enum emode {
   OFF, INSPIRE, EXPIRE
 };
 
-volatile emode g_mode = OFF;
+volatile bool g_buttonPressed = false;
 
 ISR(PCINT0_vect) {
   if ( (PINB & _BV(PCIE_BUTTON)) == 0) {
-    if(g_mode != OFF) {
-      g_mode = OFF;
-    }
+    g_buttonPressed = true;
   }
 }
 
@@ -46,6 +44,7 @@ void setup()
 
 void loop()
 {
+  static emode g_mode = OFF;
   static unsigned long g_startTime = 0;
   static unsigned long g_changeTime = 0;
   static unsigned int g_previousLedValue = 0;
@@ -58,19 +57,26 @@ void loop()
   timeValueSinceChange = millis() - g_changeTime;
   timeValueSinceStart = millis() - g_startTime;
 
-  switch(g_mode) {
-    case OFF:
-      g_startTime = 0;
-      g_previousLedValue = 0;
-      g_changeTime = 0;
-      analogWrite(PIN_LED, LOW);
-      sleep();
+  if(g_buttonPressed) {
+    g_buttonPressed = false;
+    delay(200);
+    if(digitalRead(PIN_BUTTON) == LOW) {
+      if(g_mode == OFF) {
+        g_mode = INSPIRE;
+        g_previousLedValue = 0;
+        g_startTime = millis();
+        g_changeTime = g_startTime;
+      } else {
+        g_mode = OFF;
+      }
+    }
+  }
 
-      g_mode = INSPIRE;
-      g_previousLedValue = 0;
-      g_startTime = millis();
-      g_changeTime = g_startTime;
-    break;
+  if(timeValueSinceStart > STOP_DELAY_MS) {
+    g_mode = OFF;
+  }
+
+  switch(g_mode) {
     case INSPIRE:
       pulseDivider = timeValueSinceStart * (INSPIRE_DIVIDER_END - INSPIRE_DIVIDER_START) / STOP_DELAY_MS + INSPIRE_DIVIDER_START;
       newLedValue = sin( 2 * PI / pulseDivider * timeValueSinceChange - PI / 2 ) * (LED_MAX_VALUE - LED_MIN_VALUE) + LED_MIN_VALUE;
@@ -93,9 +99,9 @@ void loop()
       }
       g_previousLedValue = (g_mode == INSPIRE) ? 0 : newLedValue;
     break;
-  }
-
-  if(timeValueSinceStart > STOP_DELAY_MS) {
-    g_mode = OFF;
+    case OFF:
+      analogWrite(PIN_LED, LOW);
+      sleep();
+    break;
   }
 }
