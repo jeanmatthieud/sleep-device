@@ -5,12 +5,12 @@
 #define PIN_BUTTON 0
 #define PCIE_BUTTON PCINT0
 #define STOP_DELAY_MS 480000 // 8 min
-#define LED_MIN_VALUE 140
+#define LED_MIN_VALUE 15
 #define LED_MAX_VALUE 255
-#define INSPIRE_DIVIDER_START 4360 // 2.18s
-#define INSPIRE_DIVIDER_END 8000 // 4s
-#define EXPIRE_DIVIDER_START 6540 // 3.27s
-#define EXPIRE_DIVIDER_END 12000 // 6s
+#define INSPIRE_DIVIDER_START 2180 // 2.18s
+#define INSPIRE_DIVIDER_END 4000 // 4s
+#define EXPIRE_DIVIDER_START 3270 // 3.27s
+#define EXPIRE_DIVIDER_END 6000 // 6s
 
 enum emode {
   OFF, INSPIRE, EXPIRE
@@ -79,7 +79,7 @@ void loop()
   switch(g_mode) {
     case INSPIRE:
       pulseDivider = timeValueSinceStart * (INSPIRE_DIVIDER_END - INSPIRE_DIVIDER_START) / STOP_DELAY_MS + INSPIRE_DIVIDER_START;
-      newLedValue = sin( 2 * PI / pulseDivider * timeValueSinceChange - PI / 2 ) * (LED_MAX_VALUE - LED_MIN_VALUE) + LED_MIN_VALUE;
+      newLedValue = sin( PI / pulseDivider * timeValueSinceChange - PI / 2 ) * (LED_MAX_VALUE - LED_MIN_VALUE)/2 + (LED_MAX_VALUE+LED_MIN_VALUE)/2;
       analogWrite(PIN_LED, newLedValue);
 
       if(newLedValue < g_previousLedValue) {
@@ -90,7 +90,7 @@ void loop()
     break;
     case EXPIRE:
       pulseDivider = timeValueSinceStart * (EXPIRE_DIVIDER_END - EXPIRE_DIVIDER_START) / STOP_DELAY_MS + EXPIRE_DIVIDER_START;
-      newLedValue = sin( 2 * PI / pulseDivider * timeValueSinceChange + PI / 2 ) * (LED_MAX_VALUE - LED_MIN_VALUE) + LED_MIN_VALUE;
+      newLedValue = sin( PI / pulseDivider * timeValueSinceChange + PI / 2 ) * (LED_MAX_VALUE - LED_MIN_VALUE)/2 + (LED_MAX_VALUE+LED_MIN_VALUE)/2;
       analogWrite(PIN_LED, newLedValue);
 
       if(newLedValue > g_previousLedValue) {
